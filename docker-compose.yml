@@ -6,5 +6,20 @@ services:
       - "8000:8000"
     volumes:
       - ./service:/service
+    environment:
+      - DB_HOST=database
+      - DB_NAME=webappdb
+      - DB_USER=webappdb_user
+      - DB_PASS=pass
     command: >
       sh -c "python manage.py runserver 0.0.0.0:8000"
+    depends_on:
+      - database
+    privileged: true
+
+  database:
+    image: postgres:14.6-alpine
+    environment:
+      - POSTGRES_DB=webappdb
+      - POSTGRES_USER=webappdb_user
+      - POSTGRES_PASSWORD=pass
