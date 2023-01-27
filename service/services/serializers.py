@@ -15,12 +15,14 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     email = serializers.CharField(source="client.user.email")
 
     def get_price():
-        class Meta:
-            model = Subscription
-            fields = (
-                "id",
-                "plan_id",
-                "plan",
-                "client_name",
-                "email",
-            )
+        return (instance.service.price - instance.service.price * (instance.plan.discount / 100)) 
+    
+    class Meta:
+        model = Subscription
+        fields = (
+            "id",
+            "plan_id",
+            "plan",
+            "client_name",
+            "email",
+        )
