@@ -18,10 +18,7 @@ class SubscriptionView(ReadOnlyModelViewSet):
                 .only("company_name", "user__email"),
             ),
         )
-        .annotate(
-            price=F("service__price")
-            - F("service__price") * F("plan__discount") / 100.00
-        )
+
     )
     serializer_class = SubscriptionSerializer
 
@@ -30,6 +27,6 @@ class SubscriptionView(ReadOnlyModelViewSet):
 
         response = super().list(self, request, *args, **kwargs)
         response_data = {"result": response.data}
-        response_data["total_price"]=queryset.aggregate(total=Sum('price')).get('total')
+        response_data["total_price"] = queryset.aggregate(total=Sum('price')).get('total')
         response.data = response_data
         return response

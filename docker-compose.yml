@@ -39,6 +39,31 @@ services:
       - redis
     depends_on:
       - redis
+      - database
+    environment:
+      - DB_HOST=database
+      - DB_NAME=webappdb
+      - DB_USER=webappdb_user
+      - DB_PASS=pass
+
+  worker2:
+    build:
+      context: .
+    hostname: worker
+    entrypoint: celery
+    command: -A celery_app.app worker --loglevel=info
+    volumes:
+      - ./service:/service
+    links:
+      - redis
+    depends_on:
+      - redis
+      - database
+    environment:
+      - DB_HOST=database
+      - DB_NAME=webappdb
+      - DB_USER=webappdb_user
+      - DB_PASS=pass
 
   flower:
     build:
