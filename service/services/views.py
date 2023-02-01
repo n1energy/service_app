@@ -1,5 +1,5 @@
 from rest_framework.viewsets import ReadOnlyModelViewSet
-from django.db.models import Prefetch, F
+from django.db.models import Prefetch, F, Sum
 
 from clients.models import Client
 from services.models import Subscription
@@ -24,3 +24,12 @@ class SubscriptionView(ReadOnlyModelViewSet):
         )
     )
     serializer_class = SubscriptionSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        response = super().list(self, request, *args, **kwargs)
+        response_data = {"result": response.data}
+        response_data["total_price"]=queryset.aggregate(total=Sum('price')).get('total')
+        response.data = response_data
+        return response
