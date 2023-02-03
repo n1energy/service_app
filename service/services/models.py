@@ -1,8 +1,10 @@
 from django.core.validators import MaxValueValidator
 from django.db import models
+from django.db.models.signals import post_delete
 
 from clients.models import Client
-from services.tasks import total_price
+from services.signals import delete_cache_total_sum
+from services.tasks import total_price, set_description
 
 
 class Service(models.Model):
@@ -20,6 +22,7 @@ class Service(models.Model):
         if self.price != self.__price:
             for subscription in self.subscriptions.all():
                 total_price.delay(subscription.id)
+                set_description.delay(subscription.id)
         return super().save(*args, **kwargs)
 
 
@@ -44,6 +47,7 @@ class Plan(models.Model):
         if self.discount != self.__discount:
             for subscription in self.subscriptions.all():
                 total_price.delay(subscription.id)
+                set_description.delay(subscription.id)
         return super().save(*args, **kwargs)
 
 
@@ -52,5 +56,15 @@ class Subscription(models.Model):
     service = models.ForeignKey(Service, related_name='subscriptions', on_delete=models.PROTECT)
     plan = models.ForeignKey(Plan, related_name='subscriptions', on_delete=models.PROTECT)
     price = models.PositiveIntegerField(default=0)
-    description = models.CharField(max_length=50, default='')
+    description = models.CharField(max_length=50, default='', db_index=True)
 
+    def save(self, *args, **kwargs):
+        creating = not bool(self.id)
+        result = super().save(*args, **kwargs)
+        if creating:
+            total_price.delay(self.id)
+        return result
+
+
+#TODO reorder delete method
+post_delete.connect(delete_cache_total_sum, sender=Subscription)
